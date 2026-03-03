@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import sqlite3
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -15,11 +14,31 @@ st.set_page_config(
 )
 
 # =====================================
-# LOAD DATA
+# LOAD DATA FROM CSV (CLOUD SAFE)
 # =====================================
 
 df = pd.read_csv("books_data.csv")
 
+# -------------------------
+# CLEAN DATA (IMPORTANT)
+# -------------------------
+
+# Clean Price column (remove £, Â, etc.)
+df["Price"] = df["Price"].str.replace(r"[^\d.]", "", regex=True)
+df["Price"] = df["Price"].astype(float)
+
+# Convert Rating text to numeric
+rating_map = {
+    "One": 1,
+    "Two": 2,
+    "Three": 3,
+    "Four": 4,
+    "Five": 5
+}
+
+df["Rating"] = df["Rating"].map(rating_map)
+
+# Compute overall metrics (used for delta comparison)
 overall_avg_price = df["Price"].mean()
 overall_avg_rating = df["Rating"].mean()
 
@@ -51,7 +70,7 @@ price_range = st.sidebar.slider(
     value=(float(df["Price"].min()), float(df["Price"].max()))
 )
 
-# Price Segmentation Logic
+# Price Segment Function
 def price_segment(price):
     if price < 20:
         return "Low"
@@ -68,7 +87,7 @@ selected_segment = st.sidebar.multiselect(
     default=["Low", "Medium", "High"]
 )
 
-# Apply Filters
+# Apply All Filters
 filtered_df = df[
     (df["Category"].isin(selected_category)) &
     (df["Rating"].isin(selected_rating)) &
@@ -85,7 +104,7 @@ st.markdown(
     """
     <h1 style='text-align: center;'>📊 Book Market Intelligence Dashboard</h1>
     <p style='text-align: center; font-size:18px;'>
-    SQL-Driven Interactive Pricing & Category Analytics
+    Interactive Pricing & Category Analytics
     </p>
     """,
     unsafe_allow_html=True
@@ -94,7 +113,7 @@ st.markdown(
 st.markdown("---")
 
 # =====================================
-# KPI SECTION WITH TRENDS
+# KPI SECTION
 # =====================================
 
 st.subheader("📌 Key Performance Indicators")
@@ -216,7 +235,7 @@ st.markdown(
     """
     <hr>
     <p style='text-align:center;font-size:14px;'>
-    Built with Python • SQLite • Streamlit • End-to-End Data Analytics Pipeline
+    Built with Python • Streamlit • Data Analytics Pipeline
     </p>
     """,
     unsafe_allow_html=True
